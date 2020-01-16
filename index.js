@@ -1,8 +1,11 @@
 const joi = require("joi");
 const express = require("express");
+const log = require("./log");
 const app = express();
 
 app.use(express.json());
+
+app.use(log);
 
 const genres = [
   { id: 1, title: "Action" },
@@ -13,6 +16,13 @@ const genres = [
 
 app.get("/api/genres", (req, res) => {
   res.send(genres);
+});
+
+app.get("/api/genres/:id", (req, res) => {
+  const genre = genres.find(c => c.id === parseInt(req.params.id));
+  if (!genre) return res.status(404).send("Course not found");
+
+  res.send(genre);
 });
 
 app.post("/api/genres", (req, res) => {
