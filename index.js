@@ -1,76 +1,30 @@
+const home = require("./routes/home");
+const genres = require("./routes/genres");
+const startupDebugger = require("debug")("app:startup");
+const dbDebugger = require("debug")("app:db");
 const joi = require("joi");
 const express = require("express");
-const log = require("./log");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const log = require("./middlewares/log");
 const app = express();
 
+app.set("view engine", "pug");
+app.set("views", "./views"); //default
+
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
+// app.use(helmet());
+if (app.get("env") == "development") {
+  app.use(morgan("tiny"));
+  startupDebugger("morgan enabled...");
+}
+
+app.use("/", home);
+app.use("/api/genres", genres);
 
 app.use(log);
-
-const genres = [
-  { id: 1, title: "Action" },
-  { id: 2, title: "Adventure" },
-  { id: 3, title: "Thriller" },
-  { id: 4, title: "Drama" }
-];
-
-app.get("/api/genres", (req, res) => {
-  res.send(genres);
-});
-
-app.get("/api/genres/:id", (req, res) => {
-  const genre = genres.find(c => c.id === parseInt(req.params.id));
-  if (!genre) return res.status(404).send("Course not found");
-
-  res.send(genre);
-});
-
-app.post("/api/genres", (req, res) => {
-  const obj = { title: req.body.title };
-
-  const { error } = validate(obj);
-
-  const genre = { id: genres.length + 1, title: req.body.title };
-
-  if (error) return res.status(400).send(error.details[0].message);
-  genres.push(genre);
-  res.send(genre);
-});
-
-app.put("/api/genres/:id", (req, res) => {
-  const genre = genres.find(g => g.id === parseInt(req.params.id));
-
-  if (!genre) return res.status(404).send("Genre not found");
-
-  const obj = { title: req.body.title };
-  const { error } = validate(obj);
-  if (error) return res.status(400).send(error.details[0].message);
-
-  genre.title = req.body.title;
-  res.send(genre);
-});
-
-app.delete("/api/genres/:id", (req, res) => {
-  const genre = genres.find(g => g.id === parseInt(req.params.id));
-
-  if (!genre) return res.status(404).send("Genre not found");
-
-  const index = genres.indexOf(genre);
-  genres.splice(index, 1);
-  res.send(genres);
-});
-
-const validate = obj => {
-  const schema = {
-    title: joi
-      .string()
-      .min(3)
-      .max(20)
-      .required()
-  };
-
-  return joi.validate(obj, schema);
-};
 
 const port = process.env.PORT || 3000;
 

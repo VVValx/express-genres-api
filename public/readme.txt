@@ -1,0 +1,1 @@
+This is being read by the express static middleware
